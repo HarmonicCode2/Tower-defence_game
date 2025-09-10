@@ -11,9 +11,7 @@ import { Button } from "../../ui/Button";
 
 import { Bouncer } from "./Bouncer";
 
-/** The screen that holds the app */
 export class MainScreen extends Container {
-  /** Assets bundles required by this screen */
   public static assetBundles = ["main"];
 
   public mainContainer: Container;
@@ -82,32 +80,25 @@ export class MainScreen extends Container {
     this.addChild(this.removeButton);
   }
 
-  /** Prepare the screen just before showing */
   public prepare() {}
 
-  /** Update the screen */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public update(_time: Ticker) {
     if (this.paused) return;
     this.bouncer.update();
   }
 
-  /** Pause gameplay - automatically fired when a popup is presented */
   public async pause() {
     this.mainContainer.interactiveChildren = false;
     this.paused = true;
   }
 
-  /** Resume gameplay */
   public async resume() {
     this.mainContainer.interactiveChildren = true;
     this.paused = false;
   }
 
-  /** Fully reset */
   public reset() {}
 
-  /** Resize the screen, fired whenever window size changes */
   public resize(width: number, height: number) {
     const centerX = width * 0.5;
     const centerY = height * 0.5;
@@ -150,10 +141,8 @@ export class MainScreen extends Container {
     this.bouncer.show(this);
   }
 
-  /** Hide screen with animations */
   public async hide() {}
 
-  /** Auto pause the app when window go out of focus */
   public blur() {
     if (!engine().navigation.currentPopup) {
       engine().navigation.presentPopup(PausePopup);
