@@ -87,7 +87,7 @@ export class GameScreen extends Container {
         });
     }
 
-    private resize(width: number, height: number) {
+    public resize(width: number, height: number) {
         const scaleX = width / this.baseWidth;
         const scaleY = height / this.baseHeight;
         this.scaleFactor = Math.min(scaleX, scaleY);
@@ -142,7 +142,6 @@ export class GameScreen extends Container {
         }
         
         if (this.coins >= cost) {
-            // Create the tower
             const tower = new Tower(
                 this.uiManager.selectedSpot.x, 
                 this.uiManager.selectedSpot.y, 
@@ -158,7 +157,6 @@ export class GameScreen extends Container {
             this.uiManager.hideTowerMenu();
             this.uiManager.updateHUD(this.coins, this.lives, this.totalHits, this.currentWave, GAME_CONSTANTS.WAVES.length);
             
-            // Reset selected spot
             this.uiManager.selectedSpot = null;
         } else {
             this.uiManager.showLowBalanceMessage();

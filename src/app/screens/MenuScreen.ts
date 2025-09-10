@@ -37,17 +37,6 @@ export class MenuScreen extends Container {
 
     
 
-//     this.title = new Text({
-//       text: "MENU",
-//       style: {
-//         fill: "#ffffff",
-//         fontSize: 64,
-//         fontWeight: "bold",
-//         fontFamily: "Arial",
-//       },
-//     });
-//     this.title.anchor.set(0.5);
-//     this.addChild(this.title);
   }
 
   public resize(width: number, height: number) {
