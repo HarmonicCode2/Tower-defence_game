@@ -1,7 +1,7 @@
 import { Graphics } from "pixi.js";
 
 export class Axe extends Graphics {
-    public speed = 3;
+    public speed = 5;
     public target: Graphics;
     public damage: number = 1;
 

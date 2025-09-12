@@ -1,7 +1,7 @@
 import { Graphics } from "pixi.js";
 
 export class CannonBall extends Graphics {
-    public speed = 4;
+    public speed = 7;
     public target: Graphics;
     public damage: number;
 

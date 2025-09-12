@@ -1,7 +1,7 @@
 import { Graphics } from "pixi.js";
 
 export class FireBall extends Graphics {
-    public speed = 5;
+    public speed = 8;
     public target: Graphics;
     public damage: number;
 

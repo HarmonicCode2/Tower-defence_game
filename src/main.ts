@@ -3,9 +3,13 @@ import { LoadScreen } from "./app/screens/LoadScreen";
 import { MenuScreen } from "./app/screens/MenuScreen";
 import { userSettings } from "./app/utils/userSettings";
 import { CreationEngine } from "./engine/engine";
+import { initFirebase } from "./firebaseClient";
 
 
 import "@pixi/sound";
+// In your main file or MenuScreen
+await initFirebase(); // initialize Firebase
+console.log("Firebase initialized!");
 
 const engine = new CreationEngine();
 setEngine(engine);
@@ -17,6 +21,7 @@ setEngine(engine);
   });
 
   userSettings.init();
+  initFirebase().catch(console.error);
 
   await engine.navigation.showScreen(LoadScreen);
 

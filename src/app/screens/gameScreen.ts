@@ -7,6 +7,7 @@ import { FireBall } from "../ui/projectiles/FireBall";
 import { AudioManager } from "../utils/AudioManager";
 import { GAME_CONSTANTS } from "../utils/constants";
 import { UIManager } from "../utils/UIManager";
+import { submitScore, initFirebase } from "../../firebaseClient";
 
 export class GameScreen extends Container {
     private hudContainer: Container;
@@ -42,6 +43,7 @@ export class GameScreen extends Container {
 
     private gameOver: boolean = false;
     private paused: boolean = false;
+    private firebaseInitialized: boolean = false;
 
     constructor() {
         super();
@@ -60,8 +62,9 @@ export class GameScreen extends Container {
             this.uiContainer, 
             this.hudContainer,
             this
-        
         );
+
+        this.initFirebase();
 
         this.createBackground();
         this.createPath();
@@ -87,6 +90,16 @@ export class GameScreen extends Container {
         });
     }
 
+    private async initFirebase() {
+        try {
+            await initFirebase();
+            this.firebaseInitialized = true;
+            console.log("Firebase initialized successfully");
+        } catch (error) {
+            console.error("Failed to initialize Firebase:", error);
+        }
+    }
+
     public resize(width: number, height: number) {
         const scaleX = width / this.baseWidth;
         const scaleY = height / this.baseHeight;
@@ -98,21 +111,47 @@ export class GameScreen extends Container {
         );
     }
 
-    private triggerGameOver() {
+    private async triggerGameOver() {
         this.gameOver = true;
         this.uiManager.showGameOver(this.totalEnemiesDefeated);
+        
+        if (this.firebaseInitialized) {
+            try {
+               await submitScore(this.getUsername(), this.totalEnemiesDefeated);
+                console.log("Score submitted successfully:", this.totalEnemiesDefeated);
+            } catch (error) {
+                console.error("Failed to submit score:", error);
+            }
+        } else {
+            console.warn("Firebase not initialized, score not submitted");
+        }
     }
 
-    private triggerVictory() {
+    private async triggerVictory() {
         this.gameOver = true;
         this.uiManager.showVictory(this.totalEnemiesDefeated);
+        
+        if (this.firebaseInitialized) {
+            try {
+               await submitScore(this.getUsername(), this.totalEnemiesDefeated);
+                console.log("Score submitted successfully:", this.totalEnemiesDefeated);
+            } catch (error) {
+                console.error("Failed to submit score:", error);
+            }
+        } else {
+            console.warn("Firebase not initialized, score not submitted");
+        }
     }
+    private getUsername(): string {
+  return localStorage.getItem("username") || "Anonymous";
+}
+
 
     public startWave() {
         if (!this.waveActive && this.currentWave < GAME_CONSTANTS.WAVES.length) {
             this.createEnemies(GAME_CONSTANTS.WAVES[this.currentWave]);
             this.waveActive = true;
-            this.uiManager.updateHUD(this.coins, this.lives, this.totalHits, this.currentWave, GAME_CONSTANTS.WAVES.length);
+            this.uiManager.updateHUD(this.coins, this.lives, this.totalHits, this.currentWave + 1, GAME_CONSTANTS.WAVES.length);
         }
     }
 
@@ -136,7 +175,7 @@ export class GameScreen extends Container {
                 damage = 2;
                 break;
             case "fire":
-                cost = 300;
+                cost = 250;
                 damage = 3;
                 break;
         }
@@ -155,7 +194,7 @@ export class GameScreen extends Container {
             
             this.coins -= cost;
             this.uiManager.hideTowerMenu();
-            this.uiManager.updateHUD(this.coins, this.lives, this.totalHits, this.currentWave, GAME_CONSTANTS.WAVES.length);
+            this.uiManager.updateHUD(this.coins, this.lives, this.totalHits, this.currentWave + 1, GAME_CONSTANTS.WAVES.length);
             
             this.uiManager.selectedSpot = null;
         } else {
@@ -279,28 +318,28 @@ export class GameScreen extends Container {
     }
 
     private updateWave() {
-        if (!this.waveActive) {
-            this.waveCooldown--;
+    if (!this.waveActive) {
+        this.waveCooldown--;
 
-            if (this.waveCooldown <= 0 && this.currentWave < GAME_CONSTANTS.WAVES.length) {
-                this.createEnemies(GAME_CONSTANTS.WAVES[this.currentWave]);
-                this.waveActive = true;
-                this.uiManager.updateHUD(this.coins, this.lives, this.totalHits, this.currentWave, GAME_CONSTANTS.WAVES.length);
-            }
-            return;
+        if (this.waveCooldown <= 0 && this.currentWave < GAME_CONSTANTS.WAVES.length) {
+            this.createEnemies(GAME_CONSTANTS.WAVES[this.currentWave]);
+            this.waveActive = true;
+            this.uiManager.updateHUD(this.coins, this.lives, this.totalHits, this.currentWave + 1, GAME_CONSTANTS.WAVES.length);
         }
+        return;
+    }
 
-        if (this.enemiesDefeated >= this.enemiesInWave && this.enemies.length === 0) {
-            this.waveActive = false;
-            this.currentWave++;
+    if (this.enemies.length === 0) {
+        this.waveActive = false;
+        this.currentWave++;
 
-            if (this.currentWave >= GAME_CONSTANTS.WAVES.length) {
-                this.triggerVictory();
-            } else {
-                this.waveCooldown = 180;
-            }
+        if (this.currentWave >= GAME_CONSTANTS.WAVES.length) {
+            this.triggerVictory();
+        } else {
+            this.waveCooldown = 180;
         }
     }
+}
 
     private moveEnemies() {
         for (let i = 0; i < this.enemies.length; i++) {
@@ -314,7 +353,8 @@ export class GameScreen extends Container {
                 this.enemyIndices.splice(i, 1);
 
                 this.lives--;
-                this.uiManager.updateHUD(this.coins, this.lives, this.totalHits, this.currentWave, GAME_CONSTANTS.WAVES.length);
+                this.enemiesDefeated++;
+                this.uiManager.updateHUD(this.coins, this.lives, this.totalHits, this.currentWave + 1, GAME_CONSTANTS.WAVES.length);
 
                 if (this.lives <= 0) {
                     this.triggerGameOver();
@@ -357,44 +397,41 @@ export class GameScreen extends Container {
         this.updateProjectileArray(this.fireBalls);
     }
 
-  
+    private updateProjectileArray(projectiles: (Axe | CannonBall | FireBall)[]) {
+        for (let i = projectiles.length - 1; i >= 0; i--) {
+            const projectile = projectiles[i];
 
-private updateProjectileArray(projectiles: (Axe | CannonBall | FireBall)[]) {
-    for (let i = projectiles.length - 1; i >= 0; i--) {
-        const projectile = projectiles[i];
+            const reached = projectile.update();
 
-        const reached = projectile.update();
+            if (reached && this.enemies.includes(projectile.target as Enemy)) {
+                const enemy = projectile.target as Enemy;
 
-        if (reached && this.enemies.includes(projectile.target as Enemy)) {
-            const enemy = projectile.target as Enemy;
+                if (enemy.takeDamage(projectile.damage)) {
+                    this.mapContainer.removeChild(enemy);
+                    const enemyIndex = this.enemies.indexOf(enemy);
+                    this.enemies.splice(enemyIndex, 1);
+                    this.enemyIndices.splice(enemyIndex, 1);
 
-            if (enemy.takeDamage(projectile.damage)) {
-                this.mapContainer.removeChild(enemy);
-                const enemyIndex = this.enemies.indexOf(enemy);
-                this.enemies.splice(enemyIndex, 1);
-                this.enemyIndices.splice(enemyIndex, 1);
+                    this.coins += enemy.worth;
+                    this.enemiesDefeated++;
+                    this.totalEnemiesDefeated++;
+                    this.totalHits++;
+                    this.uiManager.updateHUD(
+                        this.coins,
+                        this.lives,
+                        this.totalHits,
+                        this.currentWave + 1,
+                        GAME_CONSTANTS.WAVES.length
+                    );
+                }
+            }
 
-                this.coins += enemy.worth;
-                this.enemiesDefeated++;
-                this.totalEnemiesDefeated++;
-                this.totalHits++;
-                this.uiManager.updateHUD(
-                    this.coins,
-                    this.lives,
-                    this.totalHits,
-                    this.currentWave,
-                    GAME_CONSTANTS.WAVES.length
-                );
+            if (reached) {
+                this.mapContainer.removeChild(projectile);
+                projectiles.splice(i, 1);
             }
         }
-
-        if (reached) {
-            this.mapContainer.removeChild(projectile);
-            projectiles.splice(i, 1);
-        }
     }
-}
-
 
     public getEnemies(): Enemy[] {
         return this.enemies;
@@ -402,16 +439,16 @@ private updateProjectileArray(projectiles: (Axe | CannonBall | FireBall)[]) {
 
     public addCoins(amount: number) {
         this.coins += amount;
-        this.uiManager.updateHUD(this.coins, this.lives, this.totalHits, this.currentWave, GAME_CONSTANTS.WAVES.length);
+        this.uiManager.updateHUD(this.coins, this.lives, this.totalHits, this.currentWave + 1, GAME_CONSTANTS.WAVES.length);
     }
 
     public incrementHits() {
         this.totalHits++;
-        this.uiManager.updateHUD(this.coins, this.lives, this.totalHits, this.currentWave, GAME_CONSTANTS.WAVES.length);
+        this.uiManager.updateHUD(this.coins, this.lives, this.totalHits, this.currentWave + 1, GAME_CONSTANTS.WAVES.length);
     }
 
     public incrementEnemiesDefeated() {
         this.enemiesDefeated++;
         this.totalEnemiesDefeated++;
     }
-}
+}   

@@ -14,7 +14,7 @@ export class LoadScreen extends Container {
     super();
 
     this.pixiLogo = new Sprite({
-      texture: Texture.from("logo.svg"),
+      texture: Texture.from("loading.png"),
     });
     this.pixiLogo.anchor.set(0.5);
     this.addChild(this.pixiLogo);

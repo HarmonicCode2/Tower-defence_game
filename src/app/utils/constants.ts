@@ -4,11 +4,11 @@ export const GAME_CONSTANTS = {
     TOWER_PRICES: {
         simple: 0,
         cannon: 200,
-        fire: 300
+        fire:250
     },
     WAVES: [
-        { count: 10, health: 1, speed: 1, worth: 20, takesHits: 1 },
-        { count: 15, health: 2, speed: 1.2, worth: 30, takesHits: 2 },
+        { count: 10, health: 1, speed: 1.3, worth: 20, takesHits: 1 },
+        { count: 15, health: 2, speed: 1.4, worth: 30, takesHits: 2 },
         { count: 20, health: 3, speed: 1.5, worth: 40, takesHits: 3 }
     ],
     PATH_POINTS: [

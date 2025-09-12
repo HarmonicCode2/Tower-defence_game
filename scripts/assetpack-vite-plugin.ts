@@ -7,9 +7,10 @@ import type { Plugin, ResolvedConfig } from "vite";
 export function assetpackPlugin() {
   const apConfig = {
     entry: "./raw-assets",
+    cache: false,
     pipes: [
       ...pixiPipes({
-        cacheBust: false,
+        cacheBust: true,
         manifest: {
           output: "./src/manifest.json",
         },
@@ -36,8 +37,10 @@ export function assetpackPlugin() {
     },
     buildStart: async () => {
       if (mode === "serve") {
+
         if (ap) return;
         ap = new AssetPack(apConfig);
+        ap.config.cache = false
         await ap.watch();
       } else {
         await new AssetPack(apConfig).run();
